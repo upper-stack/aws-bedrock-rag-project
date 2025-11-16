@@ -212,44 +212,46 @@ Each response includes:
 
 ## 📁 Project Structure
 
-\`\`\`
+```
 .
-├── app.py # Streamlit web application
-├── bedrock_utils.py # Core RAG functions
-├── requirements.txt # Python dependencies
-├── README.md # This file
-├── SECURITY_CHECKLIST.md # Security guidelines
+├── app.py                      # Streamlit web application
+├── bedrock_utils.py            # Core RAG functions
+├── requirements.txt            # Python dependencies
+├── README.md                   # This file
+├── SECURITY_CHECKLIST.md       # Security guidelines
 │
-├── modules/ # Terraform modules
-│ ├── database/ # Aurora PostgreSQL module
-│ │ ├── main.tf
-│ │ ├── variables.tf
-│ │ └── outputs.tf
-│ └── bedrock_kb/ # Bedrock Knowledge Base module
-│ ├── main.tf
-│ ├── variables.tf
-│ └── outputs.tf
+├── modules/                    # Terraform modules
+│   ├── database/               # Aurora PostgreSQL module
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   └── bedrock_kb/             # Bedrock Knowledge Base module
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
 │
-├── stack1/ # Infrastructure stack
-│ ├── main.tf # VPC, Aurora, S3
-│ ├── variables.tf
-│ └── outputs.tf
+├── stack1/                     # Infrastructure stack
+│   ├── main.tf                 # VPC, Aurora, S3
+│   ├── variables.tf
+│   └── outputs.tf
 │
-├── stack2/ # Bedrock stack
-│ ├── main.tf # Knowledge Base
-│ ├── variables.tf
-│ └── outputs.tf
+├── stack2/                     # Bedrock stack
+│   ├── main.tf                 # Knowledge Base
+│   ├── variables.tf
+│   └── outputs.tf
 │
-└── scripts/ # Utility scripts
-├── aurora_sql.sql # Database setup SQL
-├── upload_s3.py # Upload PDFs to S3
-└── spec-sheets/ # Heavy machinery PDFs
-├── bulldozer-bd850-spec-sheet.pdf
-├── dump-truck-dt1000-spec-sheet.pdf
-├── excavator-x950-spec-sheet.pdf
-├── forklift-fl250-spec-sheet.pdf
-└── mobile-crane-mc750-spec-sheet.pdf
-\`\`\`
+└── scripts/                    # Utility scripts
+    ├── aurora_sql.sql          # Database setup SQL
+    ├── upload_s3.py            # Upload PDFs to S3
+    │
+    └── spec-sheets/            # Heavy machinery PDFs
+        ├── bulldozer-bd850-spec-sheet.pdf
+        ├── dump-truck-dt1000-spec-sheet.pdf
+        ├── excavator-x950-spec-sheet.pdf
+        ├── forklift-fl250-spec-sheet.pdf
+        └── mobile-crane-mc750-spec-sheet.pdf
+```
 
 ## 🔧 Core Components
 
