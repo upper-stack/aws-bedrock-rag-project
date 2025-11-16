@@ -44,6 +44,7 @@ rag-env/
 env/
 ENV/
 .venv/
+scripts/pdf-s3/
 
 # Environment files with secrets
 .env
