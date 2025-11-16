@@ -218,7 +218,6 @@ Each response includes:
 ├── bedrock_utils.py            # Core RAG functions
 ├── requirements.txt            # Python dependencies
 ├── README.md                   # This file
-├── SECURITY_CHECKLIST.md       # Security guidelines
 │
 ├── modules/                    # Terraform modules
 │   ├── database/               # Aurora PostgreSQL module
