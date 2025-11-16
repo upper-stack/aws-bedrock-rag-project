@@ -102,11 +102,11 @@ resource "time_sleep" "wait_10_seconds" {
 }
 
 resource "aws_bedrockagent_knowledge_base" "main" {
-  name = var.knowledge_base_name
+  name     = var.knowledge_base_name
   role_arn = aws_iam_role.bedrock_kb_role.arn
   knowledge_base_configuration {
     vector_knowledge_base_configuration {
-      embedding_model_arn = "arn:aws:bedrock:us-west-2::foundation-model/amazon.titan-embed-text-v1"
+      embedding_model_arn = "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1"
     }
     type = "VECTOR"
   }
@@ -114,19 +114,19 @@ resource "aws_bedrockagent_knowledge_base" "main" {
     type = "RDS"
     rds_configuration {
       credentials_secret_arn = var.aurora_secret_arn
-      database_name = var.aurora_db_name
-      resource_arn = var.aurora_arn
-      table_name = var.aurora_table_name
+      database_name          = var.aurora_db_name
+      resource_arn           = var.aurora_arn
+      table_name             = var.aurora_table_name
       field_mapping {
         primary_key_field = var.aurora_primary_key_field
-        vector_field   = var.aurora_verctor_field
-        text_field     = var.aurora_text_field
-        metadata_field = var.aurora_metadata_field
+        vector_field      = var.aurora_verctor_field
+        text_field        = var.aurora_text_field
+        metadata_field    = var.aurora_metadata_field
       }
 
     }
   }
-  depends_on = [ time_sleep.wait_10_seconds ]
+  depends_on = [time_sleep.wait_10_seconds]
 }
 
 data "aws_caller_identity" "current" {}
@@ -144,5 +144,5 @@ resource "aws_bedrockagent_data_source" "s3_bedrock_bucket" {
       bucket_arn = var.s3_bucket_arn
     }
   }
-  depends_on = [ aws_bedrockagent_knowledge_base.main ]
+  depends_on = [aws_bedrockagent_knowledge_base.main]
 }

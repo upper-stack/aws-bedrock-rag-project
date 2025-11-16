@@ -1,163 +1,349 @@
-# AWS Bedrock Knowledge Base with Aurora Serverless
+# AWS Bedrock RAG System for Intelligent Document Querying
 
-This project sets up an AWS Bedrock Knowledge Base integrated with an Aurora Serverless PostgreSQL database. It also includes scripts for database setup and file upload to S3.
+A production-ready Retrieval-Augmented Generation (RAG) system built with Amazon Bedrock, Aurora PostgreSQL with pgvector, and Streamlit. This application provides intelligent question-answering capabilities for heavy machinery documentation using Claude 3 AI models with source attribution.
 
-## Table of Contents
+## 🎯 Project Overview
 
-1. [Project Overview](#project-overview)
-2. [Prerequisites](#prerequisites)
-3. [Project Structure](#project-structure)
-4. [Deployment Steps](#deployment-steps)
-5. [Using the Scripts](#using-the-scripts)
-6. [Customization](#customization)
-7. [Troubleshooting](#troubleshooting)
+This system demonstrates a complete RAG implementation that:
 
-## Project Overview
+- **Validates prompts** to ensure queries are relevant to heavy machinery
+- **Retrieves contextual information** from a vector database using semantic search
+- **Generates accurate responses** using Claude 3 AI models
+- **Displays source attribution** showing which documents were used for each answer
+- **Maintains conversation history** in an interactive chat interface
 
-This project consists of several components:
+### Key Features
 
-1. Stack 1 - Terraform configuration for creating:
-   - A VPC
-   - An Aurora Serverless PostgreSQL cluster
-   - s3 Bucket to hold documents
-   - Necessary IAM roles and policies
+✅ **Prompt Validation**: Categorizes and filters user queries to ensure relevance  
+✅ **Vector Search**: Uses Amazon Titan embeddings (1536 dimensions) for semantic similarity  
+✅ **RAG Pipeline**: Combines retrieved context with LLM generation for accurate answers  
+✅ **Source Attribution**: Shows document sources, S3 locations, and relevance scores  
+✅ **Configurable Parameters**: Adjustable temperature and top_p for response control  
+✅ **Multi-Model Support**: Works with Claude 3 Haiku and Sonnet models  
+✅ **Production Infrastructure**: Full Terraform deployment with VPC, Aurora, and S3
 
-2. Stack 2 - Terraform configuration for creating:
-   - A Bedrock Knowledge Base
-   - Necessary IAM roles and policies
+## 🏗️ Architecture
 
-3. A set of SQL queries to prepare the Postgres database for vector storage
-4. A Python script for uploading files to an s3 bucket
-
-The goal is to create a Bedrock Knowledge Base that can leverage data stored in an Aurora Serverless database, with the ability to easily upload supporting documents to S3. This will allow us to ask the LLM for information from the documentation.
-
-## Prerequisites
-
-Before you begin, ensure you have the following:
-
-- AWS CLI installed and configured with appropriate credentials
-- Terraform installed (version 0.12 or later)
-- Python 3.10 or later
-- pip (Python package manager)
-
-## Project Structure
-
-```
-project-root/
+\`\`\`
+┌─────────────────┐
+│ Streamlit UI │
+│ (app.py) │
+└────────┬────────┘
 │
-├── stack1
-|   ├── main.tf
-|   ├── outputs.tf
-|   └── variables.tf
-|
-├── stack2
-|   ├── main.tf
-|   ├── outputs.tf
-|   └── variables.tf
-|
-├── modules/
-│   ├── aurora_serverless/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   └── bedrock_kb/
-│       ├── main.tf
-│       ├── variables.tf
-│       └── outputs.tf
+▼
+┌─────────────────────────────────────────┐
+│ bedrock*utils.py │
+│ ┌──────────────┐ ┌─────────────────┐ │
+│ │valid_prompt()│ │query_knowledge* │ │
+│ │ │ │base() │ │
+│ └──────────────┘ └─────────────────┘ │
+│ ┌──────────────────────────────────┐ │
+│ │generate_response() │ │
+│ └──────────────────────────────────┘ │
+└─────────────────┬───────────────────────┘
 │
-├── scripts/
-│   ├── aurora_sql.sql
-│   └── upload_to_s3.py
+┌────────┴────────┐
+▼ ▼
+┌──────────────────┐ ┌──────────────────┐
+│ Amazon Bedrock │ │ Aurora Postgres │
+│ - Claude 3 │ │ - pgvector │
+│ - Titan Embed │ │ - HNSW index │
+│ - Knowledge Base │ │ - GIN index │
+└──────────────────┘ └──────────────────┘
+│ │
+└──────────┬───────────┘
+▼
+┌──────────────┐
+│ S3 Bucket │
+│ (PDFs) │
+└──────────────┘
+\`\`\`
+
+## 📋 Prerequisites
+
+- **AWS Account** with appropriate permissions
+- **AWS CLI** configured with credentials
+- **Terraform** >= 1.0
+- **Python** 3.9+
+- **Access to Amazon Bedrock** models (Claude 3, Titan Embeddings)
+- **Git** for version control
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+
+\`\`\`bash
+git clone <repository-url>
+cd cd13926-Building-Generative-AI-Applications-with-Amazon-Bedrock-and-Python-project-solution
+\`\`\`
+
+### 2. Deploy Infrastructure (Stack 1)
+
+Deploy VPC, Aurora PostgreSQL, and S3 bucket:
+
+\`\`\`bash
+cd stack1
+terraform init
+terraform apply
+\`\`\`
+
+**Note the outputs:**
+
+- \`aurora_endpoint\` - Database endpoint
+- \`rds_secret_arn\` - Credentials secret
+- \`s3_bucket_name\` - S3 bucket for documents
+
+### 3. Configure Aurora Database
+
+Connect to Aurora using RDS Query Editor in AWS Console and run each SQL statement:
+
+\`\`\`sql
+-- 1. Enable vector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. Create schema
+CREATE SCHEMA IF NOT EXISTS bedrock_integration;
+
+-- 3. Create user role
+DO $$ BEGIN
+CREATE ROLE bedrock_user LOGIN;
+EXCEPTION WHEN duplicate_object THEN
+RAISE NOTICE 'Role already exists';
+END $$;
+
+-- 4. Grant permissions
+GRANT ALL ON SCHEMA bedrock_integration to bedrock_user;
+
+-- 5. Create table with vector column
+CREATE TABLE IF NOT EXISTS bedrock_integration.bedrock_kb (
+id uuid PRIMARY KEY,
+embedding vector(1536),
+chunks text,
+metadata json
+);
+
+-- 6. Create HNSW index for vector similarity search
+CREATE INDEX IF NOT EXISTS bedrock_kb_embedding_idx
+ON bedrock_integration.bedrock_kb
+USING hnsw (embedding vector_cosine_ops);
+
+-- 7. Create GIN index for text search (REQUIRED by Bedrock)
+CREATE INDEX IF NOT EXISTS bedrock_kb_chunks_idx
+ON bedrock_integration.bedrock_kb
+USING gin (to_tsvector('english', chunks));
+\`\`\`
+
+### 4. Upload Documents to S3
+
+\`\`\`bash
+cd ../scripts
+python3 upload_s3.py
+\`\`\`
+
+This uploads the heavy machinery specification PDFs to your S3 bucket.
+
+### 5. Deploy Bedrock Knowledge Base (Stack 2)
+
+\`\`\`bash
+cd ../stack2
+terraform init
+terraform apply
+\`\`\`
+
+**Note the output:**
+
+- \`bedrock_knowledge_base_id\` - Use this in the Streamlit app
+
+### 6. Sync Knowledge Base
+
+1. Go to AWS Console → Amazon Bedrock → Knowledge bases
+2. Click on \`my-bedrock-kb\`
+3. Go to **Data sources** tab
+4. Click **Sync** button
+5. Wait for sync to complete (~1-2 minutes)
+
+### 7. Run the Application
+
+\`\`\`bash
+cd ..
+python3 -m venv venv
+source venv/bin/activate # On Windows: venv\\Scripts\\activate
+pip install -r requirements.txt
+streamlit run app.py
+\`\`\`
+
+The app will open at \`http://localhost:8501\`
+
+## 🎮 How to Use
+
+### Configuration (Sidebar)
+
+1. **Select LLM Model**: Choose between Claude 3 Haiku (faster, cheaper) or Sonnet (more capable)
+2. **Knowledge Base ID**: Enter your KB ID from Stack 2 output
+3. **Temperature** (0.0-1.0): Controls randomness
+   - Low (0.0-0.3): Precise, factual responses
+   - High (0.7-1.0): Creative, varied responses
+4. **Top_P** (0.0-1.0): Controls diversity
+   - Low: More focused responses
+   - High: More diverse token selection
+
+### Asking Questions
+
+**Valid Questions (Heavy Machinery Topics):**
+
+- "What is the payload capacity of the dump truck?"
+- "Tell me about the hydraulic system of the excavator"
+- "What are the safety features of the bulldozer?"
+- "How does the forklift's lifting mechanism work?"
+
+**Invalid Questions (Will be Rejected):**
+
+- General knowledge questions
+- Profanity or toxic content
+- Questions about how the AI works
+- Off-topic subjects
+
+### Understanding Responses
+
+Each response includes:
+
+1. **AI-Generated Answer**: Comprehensive answer based on retrieved context
+2. **📚 View Sources** (Expandable): Shows:
+   - **Source Number** with relevance score (e.g., 87.5%)
+   - **Document Name** (e.g., \`excavator-x950-spec-sheet.pdf\`)
+   - **S3 Location** (full path)
+   - **Content Preview** (first 200 characters)
+   - **Metadata** (if available)
+
+## 📁 Project Structure
+
+\`\`\`
+.
+├── app.py # Streamlit web application
+├── bedrock_utils.py # Core RAG functions
+├── requirements.txt # Python dependencies
+├── README.md # This file
+├── SECURITY_CHECKLIST.md # Security guidelines
 │
-├── spec-sheets/
-│   └── machine_files.pdf
+├── modules/ # Terraform modules
+│ ├── database/ # Aurora PostgreSQL module
+│ │ ├── main.tf
+│ │ ├── variables.tf
+│ │ └── outputs.tf
+│ └── bedrock_kb/ # Bedrock Knowledge Base module
+│ ├── main.tf
+│ ├── variables.tf
+│ └── outputs.tf
 │
-└── README.md
-```
+├── stack1/ # Infrastructure stack
+│ ├── main.tf # VPC, Aurora, S3
+│ ├── variables.tf
+│ └── outputs.tf
+│
+├── stack2/ # Bedrock stack
+│ ├── main.tf # Knowledge Base
+│ ├── variables.tf
+│ └── outputs.tf
+│
+└── scripts/ # Utility scripts
+├── aurora_sql.sql # Database setup SQL
+├── upload_s3.py # Upload PDFs to S3
+└── spec-sheets/ # Heavy machinery PDFs
+├── bulldozer-bd850-spec-sheet.pdf
+├── dump-truck-dt1000-spec-sheet.pdf
+├── excavator-x950-spec-sheet.pdf
+├── forklift-fl250-spec-sheet.pdf
+└── mobile-crane-mc750-spec-sheet.pdf
+\`\`\`
 
-## Deployment Steps
+## 🔧 Core Components
 
-1. Clone this repository to your local machine.
+### 1. \`bedrock_utils.py\`
 
-2. Navigate to the project Stack 1. This stack includes VPC, Aurora servlerless and S3
+Three main functions:
 
-3. Initialize Terraform:
-   ```
-   terraform init
-   ```
+#### \`valid_prompt(prompt, model_id)\`
 
-4. Review and modify the Terraform variables in `main.tf` as needed, particularly:
-   - AWS region
-   - VPC CIDR block
-   - Aurora Serverless configuration
-   - s3 bucket
+Validates user prompts using Claude 3 to classify into categories:
 
-5. Deploy the infrastructure:
-   ```
-   terraform apply
-   ```
-   Review the planned changes and type "yes" to confirm.
+- **Category A**: Questions about the AI system
+- **Category B**: Toxic/profane content
+- **Category C**: Off-topic questions
+- **Category D**: Meta/instruction questions
+- **Category E**: Heavy machinery questions ✅ (only valid category)
 
-6. After the Terraform deployment is complete, note the outputs, particularly the Aurora cluster endpoint.
+Returns \`True\` only for Category E.
 
-7. Prepare the Aurora Postgres database. This is done by running the sql queries in the script/ folder. This can be done through Amazon RDS console and the Query Editor.
+#### \`query_knowledge_base(query, kb_id)\`
 
-8. Navigate to the project Stack 2. This stack includes Bedrock Knowledgebase
+Retrieves relevant context from Bedrock Knowledge Base:
 
-9. Initialize Terraform:
-   ```
-   terraform init
-   ```
+- Queries using semantic search
+- Returns top 3 most relevant chunks
+- Includes source metadata (S3 URI, relevance score)
+- Structured output with content, score, and source info
 
-10. Use the values outputs of the stack 1 to modify the values in `main.tf` as needed:
-     - Bedrock Knowledgebase configuration
+#### \`generate_response(prompt, model_id, temperature, top_p)\`
 
-11. Deploy the infrastructure:
-      ```
-      terraform apply
-      ```
-      - Review the planned changes and type "yes" to confirm.
+Generates AI responses using Claude 3:
 
+- Accepts full prompt with context
+- Configurable temperature and top_p parameters
+- Returns formatted text response
+- Handles errors gracefully
 
-12. Upload pdf files to S3, place your files in the `spec-sheets` folder and run:
-      ```
-      python scripts/upload_to_s3.py
-      ```
-      - Make sure to update the S3 bucket name in the script before running.
+### 2. \`app.py\`
 
-13. Sync the data source in the knowledgebase to make it available to the LLM.
+Streamlit application with:
 
-## Using the Scripts
+- **Chat interface** with message history
+- **Sidebar configuration** for model settings
+- **Prompt validation** before processing
+- **Knowledge Base query** for context retrieval
+- **Response generation** with source attribution
+- **Session state management** for persistence
 
-### S3 Upload Script
+### 3. Terraform Infrastructure
 
-The `upload_to_s3.py` script does the following:
-- Uploads all files from the `spec-sheets` folder to a specified S3 bucket
-- Maintains the folder structure in S3
+**Stack 1** (Foundation):
 
-To use it:
-1. Update the `bucket_name` variable in the script with your S3 bucket name.
-2. Optionally, update the `prefix` variable if you want to upload to a specific path in the bucket.
-3. Run `python scripts/upload_to_s3.py`.
+- VPC with public/private subnets across 3 AZs
+- Aurora Serverless v2 PostgreSQL 15.13
+- S3 bucket with versioning and encryption
+- Security groups and IAM roles
+- Secrets Manager for database credentials
 
-## Complete chat app
+**Stack 2** (Bedrock):
 
-### Complete invoke model and knoweldge base code
-- Open the bedrock_utils.py file and the following functions:
-  - query_knowledge_base
-  - generate_response
+- Bedrock Knowledge Base
+- S3 data source configuration
+- IAM roles for Bedrock access
+- RDS vector database integration
 
-### Complete the prompt validation function
-- Open the bedrock_utils.py file and the following function:
-  - valid_prompt
+## �� Troubleshooting
 
-  Hint: categorize the user prompt
+### Knowledge Base Returns 0 Results
 
-## Troubleshooting
+- **Check**: Data source is synced (AWS Console → Bedrock → Knowledge Bases)
+- **Check**: PDFs uploaded to S3
+- **Check**: Aurora database has data
 
-- If you encounter permissions issues, ensure your AWS credentials have the necessary permissions for creating all the resources.
-- For database connection issues, check that the security group allows incoming connections on port 5432 from your IP address.
-- If S3 uploads fail, verify that your AWS credentials have permission to write to the specified bucket.
-- For any Terraform errors, ensure you're using a compatible version and that all module sources are correctly specified.
+### Terraform Errors
 
-For more detailed troubleshooting, refer to the error messages and logs provided by Terraform and the Python scripts.
+- **"Cannot find version 15.4"**: Use Aurora PostgreSQL 15.13+
+- **"Embedding model ARN region mismatch"**: Ensure region is \`us-east-1\`
+- **"chunks column must be indexed"**: Run the GIN index SQL command
+
+### Connection Errors
+
+- **Check**: AWS credentials configured (\`aws configure\`)
+- **Check**: Region matches (us-east-1)
+- **Check**: IAM permissions for Bedrock, RDS, S3
+
+## 📝 License
+
+This project is part of the Udacity AWS AI & ML Scholarship Program.
+
+---
+
+**Built with ❤️ using Amazon Bedrock, Aurora PostgreSQL, and Streamlit**

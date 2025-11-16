@@ -37,3 +37,34 @@ override.tf.json
 .terraformrc
 terraform.rc
 __pycache__/**
+
+# Python virtual environments
+venv/
+rag-env/
+env/
+ENV/
+.venv/
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+config.json
+
+# AWS credentials
+.aws/
+credentials
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+
+# Screenshots with potentially sensitive info
+screenshots/*.png
+Screenshots/*.png
