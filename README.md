@@ -84,15 +84,17 @@ terraform apply
 
 **Note the outputs:**
 
-- \`aurora_endpoint\` - Database endpoint
-- \`rds_secret_arn\` - Credentials secret
-- \`s3_bucket_name\` - S3 bucket for documents
+```
+aurora_endpoint - Database endpoint
+rds_secret_arn - Credentials secret
+s3_bucket_name - S3 bucket for documents
+```
 
 ### 3. Configure Aurora Database
 
 Connect to Aurora using RDS Query Editor in AWS Console and run each SQL statement:
 
-\`\`\`sql
+```sql
 -- 1. Enable vector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
@@ -126,7 +128,7 @@ USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS bedrock_kb_chunks_idx
 ON bedrock_integration.bedrock_kb
 USING gin (to_tsvector('english', chunks));
-\`\`\`
+```
 
 ### 4. Upload Documents to S3
 
