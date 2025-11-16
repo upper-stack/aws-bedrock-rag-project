@@ -67,20 +67,20 @@ This system demonstrates a complete RAG implementation that:
 
 ### 1. Clone the Repository
 
-\`\`\`bash
+```
 git clone <repository-url>
 cd cd13926-Building-Generative-AI-Applications-with-Amazon-Bedrock-and-Python-project-solution
-\`\`\`
+```
 
 ### 2. Deploy Infrastructure (Stack 1)
 
 Deploy VPC, Aurora PostgreSQL, and S3 bucket:
 
-\`\`\`bash
+```
 cd stack1
 terraform init
 terraform apply
-\`\`\`
+```
 
 **Note the outputs:**
 
@@ -130,20 +130,20 @@ USING gin (to_tsvector('english', chunks));
 
 ### 4. Upload Documents to S3
 
-\`\`\`bash
+```
 cd ../scripts
 python3 upload_s3.py
-\`\`\`
+```
 
 This uploads the heavy machinery specification PDFs to your S3 bucket.
 
 ### 5. Deploy Bedrock Knowledge Base (Stack 2)
 
-\`\`\`bash
+```
 cd ../stack2
 terraform init
 terraform apply
-\`\`\`
+```
 
 **Note the output:**
 
@@ -159,13 +159,13 @@ terraform apply
 
 ### 7. Run the Application
 
-\`\`\`bash
+```
 cd ..
 python3 -m venv venv
 source venv/bin/activate # On Windows: venv\\Scripts\\activate
 pip install -r requirements.txt
 streamlit run app.py
-\`\`\`
+```
 
 The app will open at \`http://localhost:8501\`
 
